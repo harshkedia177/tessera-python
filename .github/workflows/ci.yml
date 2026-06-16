@@ -135,6 +135,22 @@ jobs:
           test -f "dist/tessera_mcp-${VERSION}.tar.gz"
           test -f "dist/tessera_mcp-${VERSION}-py3-none-any.whl"
 
-      - name: Publish to PyPI (trusted publishing)
-        # Uploads everything in dist/, so both tessera-memory and tessera-mcp ship.
+      - name: Stage per-package distributions
+        # A trusted-publishing OIDC token is scoped to a single project, so each
+        # package must upload in its own step (its own token exchange). One step for
+        # both projects fails with "OIDC scoped token is not valid for project ...".
+        run: |
+          set -euo pipefail
+          mkdir -p dist/pkg-memory dist/pkg-mcp
+          mv dist/tessera_memory-* dist/pkg-memory/
+          mv dist/tessera_mcp-* dist/pkg-mcp/
+
+      - name: Publish tessera-memory to PyPI (trusted publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/pkg-memory/
+
+      - name: Publish tessera-mcp to PyPI (trusted publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/pkg-mcp/
