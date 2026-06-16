@@ -1,0 +1,3313 @@
+{
+  "components": {
+    "schemas": {
+      "AddMemoryRequest": {
+        "additionalProperties": false,
+        "description": "One turn to append (api-design §3). ``turn_id`` optional — server-mints a ULID.",
+        "properties": {
+          "content": {
+            "description": "The turn text to remember.",
+            "title": "Content",
+            "type": "string"
+          },
+          "event_time": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the turn occurred (aware UTC); defaults to now.",
+            "title": "Event Time"
+          },
+          "infer": {
+            "default": true,
+            "description": "When false, store the turn raw with NO consolidation job enqueued.",
+            "title": "Infer",
+            "type": "boolean"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Client metadata stored on the turn for filtering.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "mode": {
+            "default": "async",
+            "description": "async (201, queue consolidation) or sync (200, consolidate inline).",
+            "enum": [
+              "async",
+              "sync"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "role": {
+            "description": "The turn's author role: system, user, or assistant.",
+            "enum": [
+              "system",
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client/ULID turn id; supplied makes the write retry-safe (ON CONFLICT).",
+            "title": "Turn Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "AddMemoryRequest",
+        "type": "object"
+      },
+      "AsyncAddResponse": {
+        "additionalProperties": false,
+        "description": "The 201 async-write body: turn durable now, consolidation queued in the background.",
+        "properties": {
+          "consolidation_queued": {
+            "description": "Whether this write enqueued a consolidation.",
+            "title": "Consolidation Queued",
+            "type": "boolean"
+          },
+          "created": {
+            "description": "False when an idempotent re-add matched an existing turn.",
+            "title": "Created",
+            "type": "boolean"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/tessera__api__v1__memories__JobHandle"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The enqueued job handle, or null when the cadence did not fire."
+          },
+          "turn_id": {
+            "description": "The turn's client/ULID id, durable and queryable now.",
+            "title": "Turn Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "turn_id",
+          "created",
+          "consolidation_queued"
+        ],
+        "title": "AsyncAddResponse",
+        "type": "object"
+      },
+      "BatchAddRequest": {
+        "additionalProperties": false,
+        "description": "A mem0-style batch of turns appended sequentially under one scope (api-design §3).",
+        "properties": {
+          "infer": {
+            "default": true,
+            "description": "Per-turn consolidation-enqueue toggle.",
+            "title": "Infer",
+            "type": "boolean"
+          },
+          "messages": {
+            "description": "The turns to append, in order.",
+            "items": {
+              "$ref": "#/components/schemas/BatchMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Metadata for every turn.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "mode": {
+            "const": "async",
+            "default": "async",
+            "description": "Batch writes are async only (a batch of inline consolidations is unbounded).",
+            "title": "Mode",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "title": "BatchAddRequest",
+        "type": "object"
+      },
+      "BatchAddResponse": {
+        "additionalProperties": false,
+        "description": "The 201 batch body: one async-add result per message, in request order.",
+        "properties": {
+          "results": {
+            "description": "Per-message add results, in order.",
+            "items": {
+              "$ref": "#/components/schemas/AsyncAddResponse"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "BatchAddResponse",
+        "type": "object"
+      },
+      "BatchMessage": {
+        "additionalProperties": false,
+        "description": "One message in a mem0-style batch (api-design §3).",
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "system",
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "turn_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Optional per-message client id.",
+            "title": "Turn Id"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "BatchMessage",
+        "type": "object"
+      },
+      "Body_resources-remember_resource_file": {
+        "properties": {
+          "blob_ref": {
+            "description": "Opaque handle to the blob in the caller's store.",
+            "title": "Blob Ref",
+            "type": "string"
+          },
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "description": "The image to caption and embed.",
+            "title": "File",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "file",
+          "blob_ref"
+        ],
+        "title": "Body_resources-remember_resource_file",
+        "type": "object"
+      },
+      "CompressRequest": {
+        "additionalProperties": false,
+        "description": "The scope (and budget) for a whole-user panel-summary digest (api-design §3).",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "token_budget": {
+            "default": 2000,
+            "description": "Approximate token budget for the packed digest.",
+            "title": "Token Budget",
+            "type": "integer"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "title": "CompressRequest",
+        "type": "object"
+      },
+      "CompressResponse": {
+        "additionalProperties": false,
+        "description": "The 200 compress body: the packed panel-summary digest as one block.",
+        "properties": {
+          "digest": {
+            "description": "The newest-first panel summaries packed under the budget.",
+            "title": "Digest",
+            "type": "string"
+          }
+        },
+        "required": [
+          "digest"
+        ],
+        "title": "CompressResponse",
+        "type": "object"
+      },
+      "ConsolidateRequest": {
+        "additionalProperties": false,
+        "description": "The scope a consolidation runs over — flat user/session, at least one (§2).",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "title": "ConsolidateRequest",
+        "type": "object"
+      },
+      "EnqueuedResponse": {
+        "additionalProperties": false,
+        "description": "The 202 body: the consolidate job was queued for the background worker.",
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/tessera__api__v1__maintenance__JobHandle",
+            "description": "The enqueued (or already-active) consolidate job."
+          }
+        },
+        "required": [
+          "job"
+        ],
+        "title": "EnqueuedResponse",
+        "type": "object"
+      },
+      "FactCorrectionRequest": {
+        "additionalProperties": false,
+        "description": "The bi-temporal correction body for a fact edge (api-design §3 Item ops).\n\nCarries the flat scope (``_ScopedBody``: at least one of user/session, a missing\npair is the boundary 422) plus the new ``object`` the fact should now assert. The\nsubject/relation are NOT settable — a correction keeps the same predicate and only\nrevises its value (a different subject/relation is a new fact, not a correction).\n``confidence`` and ``t_valid`` are optional, defaulting in ``ops.update_fact`` (the\nlatter to now), and both are validated there before any DB round-trip or paid embed.",
+        "properties": {
+          "confidence": {
+            "default": 1.0,
+            "description": "Confidence of the corrected edge, a [0,1] probability.",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "object": {
+            "description": "The corrected object the fact should now assert.",
+            "title": "Object",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "t_valid": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the correction becomes valid (aware UTC); defaults to now.",
+            "title": "T Valid"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "object"
+        ],
+        "title": "FactCorrectionRequest",
+        "type": "object"
+      },
+      "FactItem": {
+        "additionalProperties": false,
+        "description": "The corrected fact edge in the flat wire shape (its new ``ft_`` id + text).",
+        "properties": {
+          "confidence": {
+            "description": "The corrected edge's confidence.",
+            "title": "Confidence",
+            "type": "number"
+          },
+          "id": {
+            "description": "The successor edge's public id (ft_<uuid>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "t_valid": {
+            "description": "When the corrected edge became valid.",
+            "format": "date-time",
+            "title": "T Valid",
+            "type": "string"
+          },
+          "text": {
+            "description": "The regenerated 'subject relation object' fact text.",
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "default": "fact",
+            "description": "Always 'fact' for this surface.",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "confidence",
+          "t_valid"
+        ],
+        "title": "FactItem",
+        "type": "object"
+      },
+      "FilterClause": {
+        "additionalProperties": false,
+        "description": "One request-side read predicate, mapping straight onto the domain ``Filter``.\n\nThe wire shape of ``store.repos.filters`` input: ``field`` is an intrinsic column\n(``importance``, ``event_time``, …) or ``metadata.<key>``; ``op`` is the\n``FilterOp`` enum; ``value`` is the bound comparand. Validation of the field name\nand operator against the per-arm whitelist happens in the compiler (which raises\n``ValidationError`` → 422), NOT here — duplicating the whitelist on the wire model\nwould create a second source of truth that could drift from the SQL-safe one.",
+        "properties": {
+          "field": {
+            "description": "An intrinsic column name or 'metadata.<key>'.",
+            "title": "Field",
+            "type": "string"
+          },
+          "op": {
+            "$ref": "#/components/schemas/FilterOp",
+            "description": "The comparison operator."
+          },
+          "value": {
+            "description": "The comparand bound as a SQL parameter.",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "field",
+          "op",
+          "value"
+        ],
+        "title": "FilterClause",
+        "type": "object"
+      },
+      "FilterOp": {
+        "enum": [
+          "eq",
+          "ne",
+          "in",
+          "gte",
+          "lte",
+          "gt",
+          "lt"
+        ],
+        "title": "FilterOp",
+        "type": "string"
+      },
+      "ForesightItem": {
+        "additionalProperties": false,
+        "description": "A surfaced forward-looking note (plan / temporary state / deadline).",
+        "properties": {
+          "content": {
+            "description": "The forward-looking note text.",
+            "title": "Content",
+            "type": "string"
+          },
+          "id": {
+            "description": "Prefixed public id of the source episode (ep_<uuid>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "description": "plan, temporary_state, or deadline.",
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "kind"
+        ],
+        "title": "ForesightItem",
+        "type": "object"
+      },
+      "ForgetResponse": {
+        "additionalProperties": false,
+        "description": "The 200 forget body: per-kind counts of what the cascade erased.",
+        "properties": {
+          "facts_deleted": {
+            "title": "Facts Deleted",
+            "type": "integer"
+          },
+          "foresight_deleted": {
+            "title": "Foresight Deleted",
+            "type": "integer"
+          },
+          "tesserae_deleted": {
+            "title": "Tesserae Deleted",
+            "type": "integer"
+          },
+          "turns_deleted": {
+            "title": "Turns Deleted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turns_deleted",
+          "tesserae_deleted",
+          "facts_deleted",
+          "foresight_deleted"
+        ],
+        "title": "ForgetResponse",
+        "type": "object"
+      },
+      "HealthStatus": {
+        "description": "The liveness/readiness body: a single machine-readable status token.",
+        "properties": {
+          "status": {
+            "enum": [
+              "ok",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "HealthStatus",
+        "type": "object"
+      },
+      "JobStatusResponse": {
+        "additionalProperties": false,
+        "description": "The coarse job-status body an SDK polls (api-design §3).",
+        "properties": {
+          "created_at": {
+            "description": "When the job was enqueued.",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The last error, if the job failed.",
+            "title": "Error"
+          },
+          "id": {
+            "description": "The public job id (job_<int>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "description": "The job kind (e.g. consolidate).",
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "description": "Coarse lifecycle state.",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "When the job last transitioned.",
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "kind",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobStatusResponse",
+        "type": "object"
+      },
+      "MemoryItem": {
+        "additionalProperties": false,
+        "description": "One browsed/fetched memory in the flat typed wire shape (api-design §2).",
+        "properties": {
+          "created_at": {
+            "description": "When the record was created.",
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "description": "Prefixed public id (ep_<uuid> for an episode, ft_<uuid> a fact).",
+            "title": "Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "description": "Stored client metadata.",
+            "title": "Metadata",
+            "type": "object"
+          },
+          "text": {
+            "description": "The episode narrative or the fact text.",
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "description": "The memory's type.",
+            "enum": [
+              "episode",
+              "fact"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "text",
+          "created_at"
+        ],
+        "title": "MemoryItem",
+        "type": "object"
+      },
+      "Page_MemoryItem_": {
+        "additionalProperties": false,
+        "properties": {
+          "has_more": {
+            "description": "Whether a further page exists.",
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "description": "The items on this page.",
+            "items": {
+              "$ref": "#/components/schemas/MemoryItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opaque cursor for the next page; null when there are no more.",
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "has_more"
+        ],
+        "title": "Page[MemoryItem]",
+        "type": "object"
+      },
+      "PinResponse": {
+        "additionalProperties": false,
+        "description": "The pin/unpin result: the target state plus whether this call changed it.",
+        "properties": {
+          "changed": {
+            "description": "False when the episode was already in this state (or unknown).",
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "The episode's public id (ep_<uuid>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "pinned": {
+            "description": "The protected state after the call (True=pinned).",
+            "title": "Pinned",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "pinned",
+          "changed"
+        ],
+        "title": "PinResponse",
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "additionalProperties": false,
+        "description": "An RFC-9457 ``application/problem+json`` body — the one error shape (api-design §5).\n\nEvery non-2xx response serializes to this so an SDK has a single error model to\ngenerate against. ``type``/``title``/``status`` are the RFC core members;\n``detail`` is the human-readable, SANITIZED explanation (never an internal stack\nor a raw provider message for a 5xx). ``instance`` carries the request's\ncorrelation id so a caller can quote it when reporting a failure. The model is\ndeclared as a ``response_model`` on every route's ``responses={…}`` map so it\nshows up in the committed OpenAPI artifact.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A human-readable, sanitized explanation of this occurrence.",
+            "title": "Detail"
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The request correlation id (X-Request-Id) for this occurrence.",
+            "title": "Instance"
+          },
+          "status": {
+            "description": "The HTTP status code for this occurrence.",
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "description": "A short, human-readable summary of the problem type.",
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "default": "about:blank",
+            "description": "A URI identifying the problem type; 'about:blank' for generic errors.",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "status"
+        ],
+        "title": "ProblemDetail",
+        "type": "object"
+      },
+      "ProcedureView": {
+        "additionalProperties": false,
+        "description": "A stored/recalled procedure in the wire shape (its ``ep_`` id + reinforcement).",
+        "properties": {
+          "id": {
+            "description": "The procedure's public id (ep_<uuid>, a tessera subtype).",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_outcome": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The most recent recorded outcome, or null if never applied.",
+            "title": "Last Outcome"
+          },
+          "steps": {
+            "description": "The ordered steps.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "success": {
+            "description": "The success cue.",
+            "title": "Success",
+            "type": "string"
+          },
+          "trigger": {
+            "description": "The skill's trigger / recall key.",
+            "title": "Trigger",
+            "type": "string"
+          },
+          "uses": {
+            "description": "How many times the procedure has been applied.",
+            "title": "Uses",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "trigger",
+          "steps",
+          "success",
+          "uses"
+        ],
+        "title": "ProcedureView",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "description": "The read-path provenance: how the context was routed, verified, and repaired (§3).\n\nAll three are null on the pure P0 path (no hot client wired): ``route`` is the\ndifficulty the router assigned, ``verifier`` whether the hard-path verifier judged\nthe context sufficient (the PRE-repair verdict that triggered any repair), and\n``repaired`` whether one targeted repair round ran.",
+        "properties": {
+          "repaired": {
+            "default": false,
+            "description": "Whether one repair round ran.",
+            "title": "Repaired",
+            "type": "boolean"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The router's difficulty label.",
+            "title": "Route"
+          },
+          "verifier": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The hard-path verifier's pre-repair sufficiency verdict.",
+            "title": "Verifier"
+          }
+        },
+        "title": "Provenance",
+        "type": "object"
+      },
+      "QueryRequest": {
+        "additionalProperties": false,
+        "description": "The composed-read query (api-design §3). Scope is the flat user/session pair (§2).",
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "VALID-time vantage on the facts arm ('what was true then').",
+            "title": "As Of"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FilterClause"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ANDed read predicates on the episode/fact arms.",
+            "title": "Filters"
+          },
+          "known_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "TRANSACTION-time vantage on the facts arm ('what the store believed then').",
+            "title": "Known As Of"
+          },
+          "mode": {
+            "default": "chat",
+            "description": "chat (full surface + hot router/verifier) or reasoning (lean, no LLM).",
+            "enum": [
+              "chat",
+              "reasoning"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "query": {
+            "description": "The question to compose a memory context for.",
+            "title": "Query",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Episode breadth; defaults to the configured knn_k.",
+            "title": "Top K"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "QueryRequest",
+        "type": "object"
+      },
+      "QueryResponse": {
+        "additionalProperties": false,
+        "description": "The composed-read body: the context primary plus its structured pieces (api-design §3).",
+        "properties": {
+          "context": {
+            "description": "The composed, prompt-ready memory context (the primary).",
+            "title": "Context",
+            "type": "string"
+          },
+          "episodes": {
+            "description": "The episode hits alone.",
+            "items": {
+              "$ref": "#/components/schemas/TypedResult"
+            },
+            "title": "Episodes",
+            "type": "array"
+          },
+          "facts": {
+            "description": "The fact hits alone.",
+            "items": {
+              "$ref": "#/components/schemas/TypedResult"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "foresight": {
+            "description": "Surfaced forward-looking notes (chat).",
+            "items": {
+              "$ref": "#/components/schemas/ForesightItem"
+            },
+            "title": "Foresight",
+            "type": "array"
+          },
+          "portrait": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The user portrait (chat mode only), or null.",
+            "title": "Portrait"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance",
+            "description": "Read-path route/verifier/repair provenance."
+          },
+          "results": {
+            "description": "The typed episode/fact hits, by score.",
+            "items": {
+              "$ref": "#/components/schemas/TypedResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "context",
+          "results",
+          "facts",
+          "episodes",
+          "foresight",
+          "provenance"
+        ],
+        "title": "QueryResponse",
+        "type": "object"
+      },
+      "RecallProceduresRequest": {
+        "additionalProperties": false,
+        "description": "A task to recall learned skills for, by trigger similarity (api-design §3).",
+        "properties": {
+          "k": {
+            "default": 3,
+            "description": "Maximum number of procedures to return.",
+            "title": "K",
+            "type": "integer"
+          },
+          "min_similarity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Drop matches below this cosine similarity; null keeps top-k.",
+            "title": "Min Similarity"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "task": {
+            "description": "The task to match against stored procedure triggers.",
+            "title": "Task",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "task"
+        ],
+        "title": "RecallProceduresRequest",
+        "type": "object"
+      },
+      "RecallProceduresResponse": {
+        "additionalProperties": false,
+        "description": "The recall envelope: matched procedures, highest similarity first (api-design §3).",
+        "properties": {
+          "results": {
+            "description": "Matched procedures, best-first.",
+            "items": {
+              "$ref": "#/components/schemas/RecalledProcedure"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "RecallProceduresResponse",
+        "type": "object"
+      },
+      "RecallResourcesRequest": {
+        "additionalProperties": false,
+        "description": "A text query to recall resources for, by caption/visual similarity (api-design §3).",
+        "properties": {
+          "k": {
+            "default": 5,
+            "description": "Maximum number of resources to return.",
+            "title": "K",
+            "type": "integer"
+          },
+          "query": {
+            "description": "The text to match against resource captions.",
+            "title": "Query",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "RecallResourcesRequest",
+        "type": "object"
+      },
+      "RecallResourcesResponse": {
+        "additionalProperties": false,
+        "description": "The recall envelope: matched resources, highest similarity first (api-design §3).",
+        "properties": {
+          "results": {
+            "description": "Matched resources, best-first.",
+            "items": {
+              "$ref": "#/components/schemas/RecalledResource"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "RecallResourcesResponse",
+        "type": "object"
+      },
+      "RecalledProcedure": {
+        "additionalProperties": false,
+        "description": "One recalled procedure paired with its trigger-match similarity (best-first).",
+        "properties": {
+          "procedure": {
+            "$ref": "#/components/schemas/ProcedureView",
+            "description": "The recalled skill and its reinforcement state."
+          },
+          "similarity": {
+            "description": "Cosine similarity of the task to the trigger (larger is nearer).",
+            "title": "Similarity",
+            "type": "number"
+          }
+        },
+        "required": [
+          "procedure",
+          "similarity"
+        ],
+        "title": "RecalledProcedure",
+        "type": "object"
+      },
+      "RecalledResource": {
+        "additionalProperties": false,
+        "description": "One recalled resource paired with its similarity (best-first).",
+        "properties": {
+          "resource": {
+            "$ref": "#/components/schemas/ResourceItem",
+            "description": "The recalled resource."
+          },
+          "similarity": {
+            "description": "Cosine similarity to the query (larger = nearer).",
+            "title": "Similarity",
+            "type": "number"
+          }
+        },
+        "required": [
+          "resource",
+          "similarity"
+        ],
+        "title": "RecalledResource",
+        "type": "object"
+      },
+      "RecordOutcomeRequest": {
+        "additionalProperties": false,
+        "description": "The application outcome to record against a procedure (api-design §3).",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "success": {
+            "description": "Whether applying the procedure succeeded.",
+            "title": "Success",
+            "type": "boolean"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "title": "RecordOutcomeRequest",
+        "type": "object"
+      },
+      "ReindexResponse": {
+        "additionalProperties": false,
+        "description": "The 200 reindex report: derived-state repair counts (deterministic, no LLM).",
+        "properties": {
+          "panels_refreshed": {
+            "description": "Level-0 panels whose centroid was recomputed.",
+            "title": "Panels Refreshed",
+            "type": "integer"
+          },
+          "turns_backfilled": {
+            "description": "Raw turns whose null embedding was backfilled.",
+            "title": "Turns Backfilled",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turns_backfilled",
+          "panels_refreshed"
+        ],
+        "title": "ReindexResponse",
+        "type": "object"
+      },
+      "RememberProcedureRequest": {
+        "additionalProperties": false,
+        "description": "A how-to skill to store (api-design §3): trigger, ordered steps, success cue.",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "steps": {
+            "description": "The ordered steps that accomplish the skill.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "success": {
+            "description": "How the agent knows the skill worked.",
+            "title": "Success",
+            "type": "string"
+          },
+          "trigger": {
+            "description": "What the skill is for — the recall key (embedded).",
+            "title": "Trigger",
+            "type": "string"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "trigger",
+          "steps",
+          "success"
+        ],
+        "title": "RememberProcedureRequest",
+        "type": "object"
+      },
+      "RememberResourceRequest": {
+        "additionalProperties": false,
+        "description": "A blob handle (+ caption or captionable URL) to store (api-design §3).\n\nThe caller owns the blob store; ``blob_ref`` is the opaque handle Tessera persists.\nSupply ``caption`` to store it verbatim, or ``image_url`` to have the VLM caption a\nfetchable image. Exactly which is required is enforced downstream by\n``resource.remember_resource`` (a missing-both case asks the VLM with no image and\nsurfaces as a ``ValueError`` → 422).",
+        "properties": {
+          "blob_ref": {
+            "description": "Opaque handle to the blob in the caller's store.",
+            "title": "Blob Ref",
+            "type": "string"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A caller-supplied caption; omit to VLM-caption image_url.",
+            "title": "Caption"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A fetchable image URL the VLM captions when caption is omitted.",
+            "title": "Image Url"
+          },
+          "mime": {
+            "description": "The blob's MIME type (e.g. image/png).",
+            "title": "Mime",
+            "type": "string"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "blob_ref",
+          "mime"
+        ],
+        "title": "RememberResourceRequest",
+        "type": "object"
+      },
+      "ResourceItem": {
+        "additionalProperties": false,
+        "description": "A stored/recalled resource in the wire shape (its ``ep_`` id + caption + handle).",
+        "properties": {
+          "blob_ref": {
+            "description": "The opaque blob handle the caller resolves.",
+            "title": "Blob Ref",
+            "type": "string"
+          },
+          "caption": {
+            "description": "The searchable caption (the episode text).",
+            "title": "Caption",
+            "type": "string"
+          },
+          "id": {
+            "description": "The resource's public id (ep_<uuid>, a tessera subtype).",
+            "title": "Id",
+            "type": "string"
+          },
+          "mime": {
+            "description": "The blob's MIME type.",
+            "title": "Mime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "caption",
+          "blob_ref",
+          "mime"
+        ],
+        "title": "ResourceItem",
+        "type": "object"
+      },
+      "SearchRequest": {
+        "additionalProperties": false,
+        "description": "The structured-read query (api-design §3). Scope is the flat user/session pair (§2).",
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "VALID-time vantage on the facts arm ('what was true then').",
+            "title": "As Of"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FilterClause"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ANDed read predicates (intrinsic columns / metadata.<key>).",
+            "title": "Filters"
+          },
+          "known_as_of": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "TRANSACTION-time vantage on the facts arm ('what the store believed then').",
+            "title": "Known As Of"
+          },
+          "query": {
+            "description": "The search text (embedded on both retrieval tiers).",
+            "title": "Query",
+            "type": "string"
+          },
+          "rerank": {
+            "default": true,
+            "description": "Whether to apply the configured reranker (off ⇒ raw RRF order).",
+            "title": "Rerank",
+            "type": "boolean"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "top_k": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Episode breadth; defaults to the configured knn_k.",
+            "title": "Top K"
+          },
+          "types": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "episode",
+                    "fact"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Restrict results to these types; null ⇒ both.",
+            "title": "Types"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequest",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "additionalProperties": false,
+        "description": "The flat results envelope — episodes and facts interleaved by score (api-design §3).",
+        "properties": {
+          "results": {
+            "description": "Typed hits, highest score first.",
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "SearchResult": {
+        "additionalProperties": false,
+        "description": "One flat, typed search hit (api-design §3, §7 — ``score``, never ``similarity``).",
+        "properties": {
+          "id": {
+            "description": "Prefixed public id (ep_<uuid> or ft_<uuid>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "description": "The fused (or reranked) relevance score, best first.",
+            "title": "Score",
+            "type": "number"
+          },
+          "text": {
+            "description": "The episode narrative or fact text.",
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "description": "The hit's type.",
+            "enum": [
+              "episode",
+              "fact"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "text",
+          "score"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
+      "SyncAddResponse": {
+        "additionalProperties": false,
+        "description": "The 200 sync-write body: the turn plus the inline consolidation report (ADR 0004).",
+        "properties": {
+          "consolidation": {
+            "$ref": "#/components/schemas/tessera__api__v1__memories__ConsolidationSummary",
+            "description": "What the inline consolidation produced."
+          },
+          "turn_id": {
+            "description": "The turn's client/ULID id.",
+            "title": "Turn Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "turn_id",
+          "consolidation"
+        ],
+        "title": "SyncAddResponse",
+        "type": "object"
+      },
+      "TypedResult": {
+        "additionalProperties": false,
+        "description": "One typed retrieval hit echoed alongside the composed context (api-design §3).",
+        "properties": {
+          "id": {
+            "description": "Prefixed public id (ep_<uuid> or ft_<uuid>).",
+            "title": "Id",
+            "type": "string"
+          },
+          "score": {
+            "description": "The fused (or reranked) relevance score.",
+            "title": "Score",
+            "type": "number"
+          },
+          "text": {
+            "description": "The episode narrative or fact text.",
+            "title": "Text",
+            "type": "string"
+          },
+          "type": {
+            "description": "The hit's type.",
+            "enum": [
+              "episode",
+              "fact"
+            ],
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "text",
+          "score"
+        ],
+        "title": "TypedResult",
+        "type": "object"
+      },
+      "WipeRequest": {
+        "additionalProperties": false,
+        "description": "The body for a whole-user wipe — scope (and only scope) in the body (api-design §3).",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "title": "WipeRequest",
+        "type": "object"
+      },
+      "WipeResponse": {
+        "additionalProperties": false,
+        "description": "The 200 wipe body: the total rows erased across every table (right-to-be-forgotten).",
+        "properties": {
+          "total": {
+            "description": "Total rows erased across all tables for the user.",
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total"
+        ],
+        "title": "WipeResponse",
+        "type": "object"
+      },
+      "_ScopedBody": {
+        "additionalProperties": false,
+        "description": "The flat scope every write/wipe body carries: at least one of user/session (§2).\n\n``user_id`` and ``session_id`` are client partition labels (NOT authenticated — the\ntenant is); ``scoping.resolve_owner`` rejects the empty pair with the boundary 422.\nDeclared here so the writes share one definition of the scope fields rather than\nredeclaring them per body.",
+        "properties": {
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client session overlay label.",
+            "title": "Session Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Client user partition label.",
+            "title": "User Id"
+          }
+        },
+        "title": "_ScopedBody",
+        "type": "object"
+      },
+      "tessera__api__v1__maintenance__ConsolidationSummary": {
+        "additionalProperties": false,
+        "description": "The flat consolidation counts an inline (``?sync=true``) run returns.",
+        "properties": {
+          "facts_created": {
+            "title": "Facts Created",
+            "type": "integer"
+          },
+          "foresight_created": {
+            "title": "Foresight Created",
+            "type": "integer"
+          },
+          "llm_calls": {
+            "title": "Llm Calls",
+            "type": "integer"
+          },
+          "tesserae_created": {
+            "title": "Tesserae Created",
+            "type": "integer"
+          },
+          "turns_consolidated": {
+            "title": "Turns Consolidated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tesserae_created",
+          "facts_created",
+          "foresight_created",
+          "turns_consolidated",
+          "llm_calls"
+        ],
+        "title": "ConsolidationSummary",
+        "type": "object"
+      },
+      "tessera__api__v1__maintenance__JobHandle": {
+        "additionalProperties": false,
+        "description": "The pollable handle to an enqueued consolidate job (api-design §3).",
+        "properties": {
+          "id": {
+            "description": "Public job id (job_<int>) to poll at GET /v1/jobs/{id}.",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "description": "Coarse job status at enqueue time.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "JobHandle",
+        "type": "object"
+      },
+      "tessera__api__v1__memories__ConsolidationSummary": {
+        "additionalProperties": false,
+        "description": "The flat consolidation counts a sync write returns (a thin view of the report).",
+        "properties": {
+          "facts_created": {
+            "title": "Facts Created",
+            "type": "integer"
+          },
+          "foresight_created": {
+            "title": "Foresight Created",
+            "type": "integer"
+          },
+          "llm_calls": {
+            "title": "Llm Calls",
+            "type": "integer"
+          },
+          "tesserae_created": {
+            "title": "Tesserae Created",
+            "type": "integer"
+          },
+          "turns_consolidated": {
+            "title": "Turns Consolidated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tesserae_created",
+          "facts_created",
+          "foresight_created",
+          "turns_consolidated",
+          "llm_calls"
+        ],
+        "title": "ConsolidationSummary",
+        "type": "object"
+      },
+      "tessera__api__v1__memories__JobHandle": {
+        "additionalProperties": false,
+        "description": "The pollable handle to the consolidation job an async write enqueued (or null).",
+        "properties": {
+          "id": {
+            "description": "Public job id (job_<int>) to poll at GET /v1/jobs/{id}.",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "description": "Coarse job status at enqueue time.",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "JobHandle",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearer": {
+        "in": "header",
+        "name": "Authorization",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "title": "Tessera",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/ready": {
+      "get": {
+        "description": "Readiness: 200 when the DB answers a guarded ``SELECT 1``, else 503.\n\nDelegates to ``Database.healthcheck()`` (bounded by a fixed short timeout so a\nwedged pool fails the probe fast rather than hanging the orchestrator). Returns an\nexplicit ``ORJSONResponse`` so the 503 carries the same ``{\"status\": …}`` body as\nthe 200 — a balancer reads the status code, but a human curling it sees why.",
+        "operationId": "health-ready",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Ready",
+        "tags": [
+          "health",
+          "health"
+        ]
+      }
+    },
+    "/v1/compress": {
+      "post": {
+        "description": "Pack a user's panel summaries into one budgeted digest (one read, no LLM) (§3).\n\n``ops.compress`` walks the user's panels newest-first and packs their summaries under\nthe requested ``token_budget`` (a ~4-chars-per-token heuristic, no tokenizer call),\nreturned ``200`` as a single ``digest`` block. The cheap \"whole-user memory at a\nglance\" surface — no retrieval, no model reasoning.",
+        "operationId": "maintenance-compress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompressRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompressResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compress",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/v1/consolidate": {
+      "post": {
+        "description": "Consolidate a user's Tray: enqueue a job (202) or run inline (200) (api-design §3).\n\nBy default this ENQUEUES a ``consolidate`` job on ``setter_jobs`` (a system table, no\nRLS) tenant-scoped to the principal, returning ``202`` with the job handle to poll —\nthe LLM-heavy flush runs on the background worker. ``enqueue_job`` dedupes against an\nalready-active job for the same (tenant, user, kind), so a repeated request returns\nthat in-flight job's handle rather than piling on. ``?sync=true`` instead runs\n``ops.consolidate`` INLINE under the bounded semaphore + timeout and returns ``200``\nwith the report; inline requires a hot client (a router-disabled deploy has no\nconsolidation engine, so it is a 422 rather than a 500), mirroring the sync write.",
+        "operationId": "maintenance-consolidate",
+        "parameters": [
+          {
+            "description": "Run consolidation INLINE (200) instead of enqueuing (202).",
+            "in": "query",
+            "name": "sync",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Run consolidation INLINE (200) instead of enqueuing (202).",
+              "title": "Sync",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsolidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tessera__api__v1__maintenance__ConsolidationSummary"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnqueuedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Consolidate",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "description": "Resolve a ``job_<int>`` to its coarse status, tenant-filtered (api-design §3).\n\n``decode_job`` rejects any non-``job_`` id with the boundary 422. The lookup runs on\n``db.system()`` (``setter_jobs`` has no RLS) and filters by the principal's\n``tenant_id`` IN SQL — the explicit tenant scope this endpoint depends on for\nisolation. A row absent in the caller's tenant is a 404, leaking nothing about whether\nthat id belongs to another tenant.",
+        "operationId": "jobs-get_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Job",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/v1/memories": {
+      "delete": {
+        "description": "Erase EVERYTHING for one user across every table (right-to-be-forgotten, §3).\n\n``governance.wipe_user`` resolved to the body's owner (``resolve_owner`` — a missing\npair is 422). The riskiest verb in the surface, so scope is in the BODY (not a query\nstring a proxy might log) and it is tenant-scoped by the principal like every other\nroute. Returns the total rows erased; a single audit row survives the wipe by design.",
+        "operationId": "memories-wipe_memories",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WipeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WipeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Wipe Memories",
+        "tags": [
+          "memories"
+        ]
+      },
+      "get": {
+        "description": "Keyset-paginated browse over a user's episodic memories, newest first (api-design §9).\n\nScope is the flat ``user_id``/``session_id`` query pair (``resolve_owner`` rejects an\nempty pair with 422). Fetches ``limit + 1`` rows to detect a further page WITHOUT a\nsecond count query: if the extra row is present it is dropped and its predecessor's\n``(created_at, id)`` becomes the next cursor. A malformed cursor or a non-positive\nlimit is the boundary 422 (``decode_cursor``/``resolve_limit``).",
+        "operationId": "memories-list_memories",
+        "parameters": [
+          {
+            "description": "Client user partition label.",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client user partition label.",
+              "title": "User Id"
+            }
+          },
+          {
+            "description": "Client session overlay label.",
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client session overlay label.",
+              "title": "Session Id"
+            }
+          },
+          {
+            "description": "Opaque keyset cursor from a prior page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Opaque keyset cursor from a prior page.",
+              "title": "Cursor"
+            }
+          },
+          {
+            "description": "Page size (default 50, max 200).",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Page size (default 50, max 200).",
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_MemoryItem_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List Memories",
+        "tags": [
+          "memories"
+        ]
+      },
+      "post": {
+        "description": "Append one turn; async (201, queue) by default, sync (200, consolidate inline).\n\nThe hot write is identical in both modes — ``Memory.add`` embeds and durably stores\nthe turn, scoped by ``resolve_owner`` (a missing user/session pair is the boundary\n422). ``mode=async`` returns immediately with the (possibly null) consolidation job\nhandle; ``mode=sync`` additionally awaits ``ops.consolidate`` under the bounded\nsemaphore + timeout so the caller gets the freshly-derived facts/episodes back in\none round trip (ADR 0004). ``infer=false`` is a RAW store (api-design §3): it is\nthreaded to ``Memory.add`` so the async consolidation cadence is never enqueued, and\nit short-circuits the sync branch BEFORE the inline ``ops.consolidate`` — a raw write\nasks for no derive in either mode, so ``infer=false`` always returns the async-add\nbody with no job, even under ``mode=sync``.",
+        "operationId": "memories-add_memory",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddMemoryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncAddResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncAddResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add Memory",
+        "tags": [
+          "memories"
+        ]
+      }
+    },
+    "/v1/memories/turns/{turn_id}": {
+      "delete": {
+        "description": "Forget a raw Tray turn by its client id (api-design §3 Item ops).\n\nThe turn is addressed by its client/ULID ``turn_id`` (not a prefixed public id) since\nthat is what the caller wrote it with. ``governance.forget(turn_id=…)`` is a true\ndelete with no cascade (a raw turn links to no tessera); a turn that does not exist\nyields a zero-count report (the erase is idempotent), not a 404.",
+        "operationId": "memories-forget_turn",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "turn_id",
+            "required": true,
+            "schema": {
+              "title": "Turn Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ScopedBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Forget Turn",
+        "tags": [
+          "memories"
+        ]
+      }
+    },
+    "/v1/memories/{item_id}": {
+      "delete": {
+        "description": "Forget one memory by its prefixed id, dispatching on the prefix (api-design §3).\n\n``ep_`` runs the full ``governance.forget`` tessera cascade (the episode, its\nforesight, single-source facts, graph edges, panel/portrait reconciliation) — passed\n``runtime.hot`` so a surviving panel is re-narrated by the LLM when one is wired, and\ndegrades to a deterministic placeholder when it is not. ``ft_`` deletes a single fact\nedge. A ``job_`` id is the boundary 422. The erase is idempotent (a missing id yields\na zero-count report, not a 404), matching the governance contract.",
+        "operationId": "memories-forget_memory",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ScopedBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForgetResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Forget Memory",
+        "tags": [
+          "memories"
+        ]
+      },
+      "get": {
+        "description": "Fetch one memory by its prefixed id, dispatching on the prefix (api-design §2).\n\n``ep_`` resolves a tessera, ``ft_`` a fact; a ``job_`` (or any other) id is the\nboundary 422 (``decode``). The id alone does not encode the user, so the flat scope\nis still required and enforced per-user in the repo (RLS isolates only the tenant). A\nwell-formed id that resolves to no row in the caller's (tenant, user) is a 404.",
+        "operationId": "memories-get_memory",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Client user partition label.",
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client user partition label.",
+              "title": "User Id"
+            }
+          },
+          {
+            "description": "Client session overlay label.",
+            "in": "query",
+            "name": "session_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Client session overlay label.",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get Memory",
+        "tags": [
+          "memories"
+        ]
+      },
+      "patch": {
+        "description": "Correct a fact edge bi-temporally; ``ft_`` only, an ``ep_`` is 422 (api-design §3).\n\n``decode_uuid(expected=FACT)`` accepts only an ``ft_`` id — an ``ep_`` (or any\nother) prefix is the boundary 422 (an episode is not a single correctable\nassertion). The new ``object``, confidence, and validity instant lower straight into\n``ops.update_fact``, which supersedes the predecessor in one transaction and returns\nthe successor edge; a missing fact is its 404 and an already-invalidated /\nconcurrently-closed one its 409. The response carries the SUCCESSOR's ``ft_`` id so a\ncaller can address the corrected version, while an as-of-past read still finds the\nsuperseded predecessor.",
+        "operationId": "facts-correct_fact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FactCorrectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Correct Fact",
+        "tags": [
+          "facts"
+        ]
+      }
+    },
+    "/v1/memories/{item_id}/pin": {
+      "delete": {
+        "description": "Clear an episode's pin, returning it to the sweep's reach; ``ep_`` only (§3).\n\nThe mirror of ``pin_memory``: ``decode_uuid(expected=EPISODE)`` is the same\n``ep_``-only guard, and ``ops.unpin`` clears ``protected`` and returns whether the\nflag changed (False when already unpinned or unknown). The result reports\n``pinned=false`` with that ``changed`` flag.",
+        "operationId": "pins-unpin_memory",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ScopedBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpin Memory",
+        "tags": [
+          "pins"
+        ]
+      },
+      "post": {
+        "description": "Pin an episode so the eviction sweep never demotes/evicts it; ``ep_`` only (§3).\n\n``decode_uuid(expected=EPISODE)`` rejects an ``ft_`` (or any non-episode) id with the\nboundary 422 — a fact is not pinnable. ``ops.pin`` sets ``protected = true`` and\nreturns whether the flag changed (False when already pinned or the id is unknown,\nboth audited); the response echoes the resulting ``pinned`` state and that\n``changed`` flag rather than 404-ing an idempotent no-op, matching the op's contract.",
+        "operationId": "pins-pin_memory",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ScopedBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pin Memory",
+        "tags": [
+          "pins"
+        ]
+      }
+    },
+    "/v1/memories:batch": {
+      "post": {
+        "description": "Append a batch of turns sequentially under one scope (mem0-style, api-design §3).\n\nEach message is one ``Memory.add`` in request order, sharing the body's scope and\nmetadata; a per-message ``turn_id`` (else a server-minted ULID) keeps each write\nindividually retry-safe. Sequential, not concurrent, because the consolidation\ncadence counts turns and a batch is a single conversational burst — ordering keeps\nthe edge-trigger deterministic. Returns one async-add result per message so a caller\ncan see which turns were created and which (if any) queued a consolidation.",
+        "operationId": "memories-add_memories_batch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchAddRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchAddResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add Memories Batch",
+        "tags": [
+          "memories"
+        ]
+      }
+    },
+    "/v1/procedures": {
+      "post": {
+        "description": "Store a how-to skill recallable by trigger similarity (api-design §3).\n\n``procedural.remember_procedure`` embeds the trigger (the recall key) and inserts a\n``protected`` procedural tessera; the stored skill is returned with fresh\nreinforcement counters (``uses=0``, ``last_outcome=null``) and its ``ep_`` id so a\ncaller can later record an outcome against it.",
+        "operationId": "procedural-remember_procedure",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RememberProcedureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remember Procedure",
+        "tags": [
+          "procedural"
+        ]
+      }
+    },
+    "/v1/procedures/recall": {
+      "post": {
+        "description": "Recall the learned skills whose trigger best matches a task (api-design §3).\n\n``procedural.recall_procedures`` embeds the task and runs a KNN scoped to procedural\ntesserae, returning each hit's parsed procedure and its cosine similarity, best-first;\n``min_similarity`` drops weak matches so a task with no learned skill returns nothing\nrather than a spurious nearest neighbor. A read — it does not touch use counts.",
+        "operationId": "procedural-recall_procedures",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecallProceduresRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecallProceduresResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recall Procedures",
+        "tags": [
+          "procedural"
+        ]
+      }
+    },
+    "/v1/procedures/{item_id}/outcome": {
+      "post": {
+        "description": "Record that a procedure was applied, updating its reinforcement state (api-design §3).\n\nA procedure is addressed by its tessera's ``ep_`` id, so ``decode_uuid(expected=\nEPISODE)`` rejects any non-episode id with the boundary 422.\n``procedural.record_outcome`` atomically bumps ``uses`` and sets ``last_outcome``\n(a failure still counts as a use — outcome is a usage signal, not a quality gate) and\nraises ``NotFoundError`` → 404 when the id is unknown or not a procedural tessera. The\nupdated procedure (with the new counters) is returned.",
+        "operationId": "procedural-record_outcome",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordOutcomeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Record Outcome",
+        "tags": [
+          "procedural"
+        ]
+      }
+    },
+    "/v1/query": {
+      "post": {
+        "description": "Compose a memory context for a question (api-design §3 Reads, §1).\n\nLowers to ``Memory.query`` (which resolves the owner, rejects a blank query, runs the\nhybrid arms + theme panels + tray, and — in chat mode with a hot client — the\ndifficulty router, verifier, and one repair round). The composed ``context`` is the\nprimary product; the structured pieces and the provenance are echoed so a caller can\ncite, inspect, or audit how the context was assembled. ``filters`` and the bi-temporal\nvantages thread straight through. An empty scope or a blank query is the boundary 422.",
+        "operationId": "query-query",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Query",
+        "tags": [
+          "query"
+        ]
+      }
+    },
+    "/v1/reindex": {
+      "post": {
+        "description": "Repair derived index state synchronously — embeddings + panel drift (api-design §3).\n\n``ops.reindex`` is deterministic (re-embeds null-embedding raw turns and recomputes\nlevel-0 panel centroids from current membership) with no LLM and no background job\nkind, so it runs INLINE and returns ``200`` with the repair counts directly. Scoped\nto the body's owner.",
+        "operationId": "maintenance-reindex",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsolidateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reindex",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/v1/resources": {
+      "post": {
+        "description": "Store a blob handle + caption as a retrievable resource (api-design §3, JSON).\n\nThe caller owns the blob storage; Tessera persists only the ``blob_ref`` handle and\nthe searchable caption (supplied, or VLM-generated from ``image_url``).\n``resource.remember_resource`` embeds the caption on the episode tier, inserts a\n``protected`` resource tessera, and audits it; the stored resource is returned with\nits ``ep_`` id.",
+        "operationId": "resources-remember_resource",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RememberResourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remember Resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/resources/file": {
+      "post": {
+        "description": "Thin multipart upload: VLM-caption + embed an image, then DISCARD the bytes (§3).\n\nA convenience over the JSON route for callers that have the bytes in hand: the upload\nis read into memory, validated against the image-MIME allowlist (422 otherwise) and a\n5 MB size cap (413 otherwise) BEFORE the paid VLM call, base64-encoded, and handed to\n``resource.remember_resource`` which captions it through the runtime's ``vlm`` and\nembeds the caption (or the image itself, when the embedder is multimodal). The bytes\nare NOT retained — only the caption and the caller-supplied ``blob_ref`` handle are\npersisted (blob storage is out of scope). Scope is the flat user/session FORM fields.",
+        "operationId": "resources-remember_resource_file",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_resources-remember_resource_file"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceItem"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remember Resource File",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/resources/recall": {
+      "post": {
+        "description": "Recall resources whose caption/visual content matches a text query (api-design §3).\n\n``resource.recall_resources`` embeds the query and runs a KNN scoped to resource\ntesserae (the first-class typed read path, reachable regardless of any episodic\n``type`` filter), returning each resource and its cosine similarity best-first.",
+        "operationId": "resources-recall_resources",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecallResourcesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecallResourcesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recall Resources",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/v1/search": {
+      "post": {
+        "description": "Structured RRF retrieval to flat typed results, no LLM (api-design §3 Reads).\n\nLowers straight to ``ops.retrieve`` (which resolves the owner, rejects a blank query,\nand fuses dense + BM25 per arm), then flattens episodes and facts into one\n``results[]`` ordered by descending score. ``rerank=false`` passes the in-process RRF\nidentity reranker so the raw fusion order stands without a hosted rerank call;\n``rerank=true`` (the default) uses the runtime's configured reranker. ``types`` is\napplied AFTER retrieval as a thin projection (the episode/fact arms are separate\nqueries, so restricting to one type simply drops the other arm's hits). A bad filter\nfield/op or an empty scope surfaces as the boundary 422.",
+        "operationId": "search-search",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search",
+        "tags": [
+          "search"
+        ]
+      }
+    }
+  }
+}

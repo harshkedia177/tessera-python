@@ -1,0 +1,140 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Sync dependencies
+        # --all-packages installs the workspace siblings (tessera-mcp) too;
+        # bare `uv sync` removes them, leaving the member outside the CI gate.
+        run: uv sync --all-packages
+
+      - name: Lint (ruff check)
+        run: uv run ruff check .
+
+      - name: Format check (ruff format)
+        run: uv run ruff format --check .
+
+      - name: Type check (mypy --strict)
+        run: uv run mypy packages/tessera-mcp/src src/tessera_memory
+
+      - name: Tests (pytest)
+        run: uv run pytest -q
+
+      - name: Tests (tessera-mcp)
+        run: uv run pytest -q packages/tessera-mcp/tests
+
+  model-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Sync dependencies
+        run: uv sync
+
+      - name: Regenerate models from openapi.json
+        run: uv run python scripts/generate_models.py
+
+      - name: Fail on drift between openapi.json and models.py
+        run: git diff --exit-code -- src/tessera_memory/models.py
+
+  publish:
+    # Publish to PyPI on a version tag via OIDC trusted publishing (no stored token).
+    needs: [check, model-drift]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set version from release tag
+        # The tag is the source of truth for a release: strip the leading "v" and stamp it
+        # into _version.py so the built artifact's version is exactly the version tagged
+        # (hatch reads __version__ from this file). Reject a tag that is not a valid
+        # PEP 440 / SemVer release so a typo fails the build instead of publishing junk.
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([._-]?(a|b|rc|alpha|beta|post|dev)[0-9]+)?$'; then
+            echo "::error::Tag '${GITHUB_REF_NAME}' is not a valid release version (expected e.g. v1.2.3)."
+            exit 1
+          fi
+          echo "Releasing version: ${VERSION}"
+          cat > src/tessera_memory/_version.py <<EOF
+          """Single source of truth for the SDK version (independent SemVer line)."""
+
+          from __future__ import annotations
+
+          __version__ = "${VERSION}"
+          EOF
+          cat src/tessera_memory/_version.py
+          # tessera-mcp single-sources its version from its own _version.py (same scheme
+          # as the SDK; hatch reads __version__ from it). Stamp it — and the npm wrapper's
+          # package.json — from the same tag so all three lines stay in lockstep.
+          cat > packages/tessera-mcp/src/tessera_mcp/_version.py <<EOF
+          """Single source of truth for the tessera-mcp version (kept in lockstep with the SDK at release)."""
+
+          from __future__ import annotations
+
+          __version__ = "${VERSION}"
+          EOF
+          cat packages/tessera-mcp/src/tessera_mcp/_version.py
+          python - "$VERSION" <<'PY'
+          import json, sys
+          version = sys.argv[1]
+          path = "packages/tessera-mcp/npm/package.json"
+          with open(path) as fh:
+              data = json.load(fh)
+          data["version"] = version
+          with open(path, "w") as fh:
+              json.dump(data, fh, indent=2)
+              fh.write("\n")
+          print(f"stamped npm package.json version: {version}")
+          PY
+
+      - name: Build sdist + wheel (both packages)
+        run: uv build --all-packages
+
+      - name: Verify built versions match the tag
+        # Belt-and-braces: assert the artifact filenames carry the tagged version before upload.
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          ls dist/
+          test -f "dist/tessera_memory-${VERSION}.tar.gz"
+          test -f "dist/tessera_memory-${VERSION}-py3-none-any.whl"
+          test -f "dist/tessera_mcp-${VERSION}.tar.gz"
+          test -f "dist/tessera_mcp-${VERSION}-py3-none-any.whl"
+
+      - name: Publish to PyPI (trusted publishing)
+        # Uploads everything in dist/, so both tessera-memory and tessera-mcp ship.
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,0 +1,89 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tessera-memory"
+dynamic = ["version"]
+description = "Official Python SDK for the Tessera memory service (sync + async)."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "Tessera" }]
+keywords = ["tessera", "memory", "llm", "agents", "rag", "sdk"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.28",
+    "pydantic>=2.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/harshkedia177/tessera-python"
+Repository = "https://github.com/harshkedia177/tessera-python"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "respx>=0.22",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "datamodel-code-generator>=0.26",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+tessera-memory = { workspace = true }
+tessera-mcp = { workspace = true }
+
+[project.optional-dependencies]
+mcp = ["tessera-mcp"]
+
+[tool.hatch.version]
+path = "src/tessera_memory/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tessera_memory"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/docs",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+# Generated artifact, formatted by its own generator; see [[tool.mypy.overrides]].
+extend-exclude = ["src/tessera_memory/models.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["tessera_memory.models"]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "live: end-to-end smoke against a real Tessera server (skipped unless explicitly run)",
+]

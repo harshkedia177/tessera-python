@@ -1,0 +1,11 @@
+{
+  "name": "tessera",
+  "owner": { "name": "Tessera" },
+  "plugins": [
+    {
+      "name": "tessera-memory",
+      "source": "./integrations/claude-code",
+      "description": "Long-term memory for Claude Code via the Tessera MCP server (recall + save conventions, decisions, and lessons across sessions)."
+    }
+  ]
+}

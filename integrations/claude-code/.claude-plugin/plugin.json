@@ -1,0 +1,10 @@
+{
+  "name": "tessera-memory",
+  "version": "0.1.0",
+  "description": "Long-term memory for Claude Code via the Tessera MCP server: recall conventions, decisions, and lessons; save new ones across sessions.",
+  "author": { "name": "Tessera" },
+  "homepage": "https://github.com/harshkedia177/tessera-python",
+  "repository": "https://github.com/harshkedia177/tessera-python",
+  "license": "Apache-2.0",
+  "keywords": ["memory", "mcp", "rag", "agents"]
+}

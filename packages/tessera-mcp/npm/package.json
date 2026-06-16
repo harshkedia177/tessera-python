@@ -1,0 +1,9 @@
+{
+  "name": "tessera-mcp",
+  "version": "0.1.0",
+  "description": "Run the Tessera memory MCP server via npx (bootstraps the Python server with uv)",
+  "bin": { "tessera-mcp": "bin/tessera-mcp.js" },
+  "files": ["bin/"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
