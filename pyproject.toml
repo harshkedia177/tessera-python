@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "tessera-memory"
 dynamic = ["version"]
-description = "Official Python SDK for the Tessera memory service (sync + async)."
+description = "Long-term memory for LLM agents: the typed, sync and async Python client for the Tessera memory service."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.10"

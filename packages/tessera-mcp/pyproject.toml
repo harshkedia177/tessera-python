@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "tessera-mcp"
 dynamic = ["version"]
-description = "MCP server exposing Tessera memory to AI coding agents"
+description = "Long-term memory for Claude Code, Codex, and other AI coding agents: the Tessera memory MCP server."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

@@ -2,15 +2,15 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/tessera-memory.svg)](https://pypi.org/project/tessera-memory/)
 [![Python versions](https://img.shields.io/pypi/pyversions/tessera-memory.svg)](https://pypi.org/project/tessera-memory/)
-[![License](https://img.shields.io/pypi/l/tessera-memory.svg)](./LICENSE)
+[![License](https://img.shields.io/pypi/l/tessera-memory.svg)](https://github.com/harshkedia177/tessera-python/blob/main/LICENSE)
 [![CI](https://github.com/harshkedia177/tessera-python/actions/workflows/ci.yml/badge.svg)](https://github.com/harshkedia177/tessera-python/actions/workflows/ci.yml)
 
 **Long-term memory for LLM agents.** The official Python SDK for the
-[Tessera](https://github.com/harshkedia177/tessera-python) memory service — write conversational turns, and recall
-ranked hits or a prompt-ready context block. Sync and async clients, fully typed (Pydantic v2
-models generated from the server's OpenAPI 3.1 contract).
+[Tessera](https://github.com/harshkedia177/tessera-python) memory service. Write conversational turns,
+then recall ranked hits or a prompt-ready context block. Sync and async clients, fully typed against
+the server's OpenAPI 3.1 contract (Pydantic v2 models).
 
-[Getting started](./docs/getting-started.md) · [Concepts](./docs/concepts.md) · [API reference](./api.md) · [Use with MCP](./docs/integrations/mcp.md)
+[Getting started](https://github.com/harshkedia177/tessera-python/blob/main/docs/getting-started.md) · [Concepts](https://github.com/harshkedia177/tessera-python/blob/main/docs/concepts.md) · [API reference](https://github.com/harshkedia177/tessera-python/blob/main/api.md) · [Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md)
 
 ## Installation
 
@@ -42,8 +42,8 @@ answer = client.query(query="what coffee does Ada like?", mode="chat", user_id="
 print(answer.context)
 ```
 
-See [Getting started](./docs/getting-started.md) for a guided walkthrough and
-[Concepts](./docs/concepts.md) for how memory is structured.
+See [Getting started](https://github.com/harshkedia177/tessera-python/blob/main/docs/getting-started.md) for a guided walkthrough and
+[Concepts](https://github.com/harshkedia177/tessera-python/blob/main/docs/concepts.md) for how memory is structured.
 
 ## Async
 
@@ -70,8 +70,8 @@ asyncio.run(main())
 | ------- | ------------------- | -------------------- | -------- |
 | API key | `Tessera(api_key=)` | `TESSERA_API_KEY`    | required |
 
-Auth is sent as `Authorization: Bearer <key>`. Full options — timeouts, custom transport, logging,
-raw responses — are in [Configuration](./docs/configuration.md).
+Auth is sent as `Authorization: Bearer <key>`. For timeouts, custom transport, logging, and raw
+responses, see [Configuration](https://github.com/harshkedia177/tessera-python/blob/main/docs/configuration.md).
 
 ## Pagination
 
@@ -83,7 +83,7 @@ for item in client.memories.list(user_id="ada"):   # iterates across all pages
 ```
 
 Page manually with `page.has_next_page()` / `page.get_next_page()`. See
-[the reference](./api.md#pagination).
+[the reference](https://github.com/harshkedia177/tessera-python/blob/main/api.md#pagination).
 
 ## Handling errors
 
@@ -111,17 +111,17 @@ except TesseraError:
 | 409 | `ConflictError` | | network | `APIConnectionError` |
 | 422 | `UnprocessableEntityError` | | | |
 
-See [Error handling](./docs/guides/error-handling.md).
+See [Error handling](https://github.com/harshkedia177/tessera-python/blob/main/docs/guides/error-handling.md).
 
 ## Retries
 
-Failed requests are retried with jittered exponential backoff (default `max_retries=2`, honoring
-`Retry-After`). `429`/`502`/`503` are retried for any call; an ambiguous `500`/timeout/connection
-error is retried only for idempotent requests — `GET`/`DELETE` and `memories.add`, which mints a
-client-side ULID `turn_id` to stay `ON CONFLICT`-safe. Other writes are not retried on ambiguous
-failures, so they can't be double-applied. Override per call with
-`client.with_options(max_retries=0)`. Details in
-[Configuration](./docs/configuration.md#retries-and-idempotency).
+The SDK retries failed requests with jittered exponential backoff (default `max_retries=2`, honoring
+`Retry-After`). It retries `429`/`502`/`503` for any call. It retries an ambiguous `500`, timeout, or
+connection error only for idempotent requests: `GET`/`DELETE` and `memories.add`, which mints a
+client-side ULID `turn_id` to stay `ON CONFLICT`-safe. It does not retry other writes on ambiguous
+failures, so they can't be double-applied. Override the budget per call with
+`client.with_options(max_retries=0)`. See
+[Configuration](https://github.com/harshkedia177/tessera-python/blob/main/docs/configuration.md#retries-and-idempotency).
 
 ## Logging
 
@@ -131,17 +131,17 @@ header, the API key, and request bodies are never logged.
 ## Use with MCP (Claude Code, Codex)
 
 Expose memory to a coding agent with the `tessera-mcp` server. You don't install this SDK
-separately — `uvx` fetches the server (and the SDK with it) on first run. Set `TESSERA_API_KEY`
+separately; `uvx` fetches the server (and the SDK with it) on first run. Set `TESSERA_API_KEY`
 and `TESSERA_REPO` in your shell first.
 
-**Claude Code** — install the plugin:
+**Claude Code.** Install the plugin:
 
 ```
 /plugin marketplace add harshkedia177/tessera-python
 /plugin install tessera-memory@tessera
 ```
 
-**Codex** — add to `~/.codex/config.toml`:
+**Codex.** Add to `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.tessera_memory]
@@ -150,17 +150,18 @@ args = ["--from", "tessera-mcp", "tessera-mcp"]
 env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]
 ```
 
-Full setup for Claude Code, Codex, Cursor, and other MCP clients — plus the privacy notes on
-transcript consolidation — is in [Use with MCP](./docs/integrations/mcp.md).
+[Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md) covers
+full setup for Claude Code, Codex, Cursor, and other MCP clients, plus the privacy notes on transcript
+consolidation.
 
 ## Documentation
 
-- [Getting started](./docs/getting-started.md) — install, connect, first reads and writes.
-- [Concepts](./docs/concepts.md) — turns, episodes, facts, procedures, resources.
-- [Configuration](./docs/configuration.md) — clients, retries, timeouts, logging, transport.
-- Guides: [memories](./docs/guides/memory.md) · [search and query](./docs/guides/search-and-query.md) · [procedures and resources](./docs/guides/procedures-and-resources.md) · [error handling](./docs/guides/error-handling.md)
-- [Use with MCP](./docs/integrations/mcp.md) — Claude Code, Codex, and other agents.
-- [API reference](./api.md) — the full method surface.
+- [Getting started](https://github.com/harshkedia177/tessera-python/blob/main/docs/getting-started.md): install, connect, first reads and writes.
+- [Concepts](https://github.com/harshkedia177/tessera-python/blob/main/docs/concepts.md): turns, episodes, facts, procedures, resources.
+- [Configuration](https://github.com/harshkedia177/tessera-python/blob/main/docs/configuration.md): clients, retries, timeouts, logging, transport.
+- Guides: [memories](https://github.com/harshkedia177/tessera-python/blob/main/docs/guides/memory.md) · [search and query](https://github.com/harshkedia177/tessera-python/blob/main/docs/guides/search-and-query.md) · [procedures and resources](https://github.com/harshkedia177/tessera-python/blob/main/docs/guides/procedures-and-resources.md) · [error handling](https://github.com/harshkedia177/tessera-python/blob/main/docs/guides/error-handling.md)
+- [Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md): Claude Code, Codex, and other agents.
+- [API reference](https://github.com/harshkedia177/tessera-python/blob/main/api.md): the full method surface.
 
 ## Development
 
@@ -174,4 +175,4 @@ make test         # pytest (respx-mocked)
 
 ## License
 
-[Apache-2.0](./LICENSE)
+[Apache-2.0](https://github.com/harshkedia177/tessera-python/blob/main/LICENSE)

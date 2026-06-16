@@ -19,11 +19,11 @@ MCP server exposing Tessera memory to AI coding agents (Claude Code, Codex).
 
 ## Configure (env)
 
-- `TESSERA_API_KEY` — your Tessera API key (the tenant/isolation boundary)
-- `TESSERA_REPO` — repo identity, used as the durable `user_id` (e.g. `repo:my-app`)
-- `TESSERA_SESSION` — optional task/session id
-- `TESSERA_RECALL_ON_PROMPT` — set `0` to disable per-prompt lesson recall (Claude Code)
-- `TESSERA_CONSOLIDATE_TRANSCRIPT` — set `1` to enable the Claude Code SessionEnd
+- `TESSERA_API_KEY`: your Tessera API key (the tenant/isolation boundary)
+- `TESSERA_REPO`: repo identity, used as the durable `user_id` (e.g. `repo:my-app`)
+- `TESSERA_SESSION`: optional task/session id
+- `TESSERA_RECALL_ON_PROMPT`: set `0` to disable per-prompt lesson recall (Claude Code)
+- `TESSERA_CONSOLIDATE_TRANSCRIPT`: set `1` to enable the Claude Code SessionEnd
   transcript upload (default off). See the warning below.
 
 ## Tools
@@ -38,7 +38,7 @@ MCP server exposing Tessera memory to AI coding agents (Claude Code, Codex).
 
 ## Editor setup
 
-- Claude Code: install the plugin — `/plugin marketplace add harshkedia177/tessera-python` then
+- Claude Code: install the plugin with `/plugin marketplace add harshkedia177/tessera-python` then
   `/plugin install tessera-memory@tessera`. Bundles the MCP server, session hooks, and the
   `using-tessera-memory` skill (see `integrations/claude-code/`).
 - Codex: copy the `[mcp_servers.tessera_memory]` block into `~/.codex/config.toml` and drop
@@ -60,5 +60,5 @@ For that reason it is **opt-in and off by default**:
   `SECRET=`/`PASSWORD=` assignments, `sk-`/`tsk_`/`ghp_`/`xox` tokens, AWS access
   keys, `Authorization:` headers, PEM private-key blocks) before upload.
 
-Redaction is best-effort, not a guarantee — enable transcript consolidation only
+Redaction is best-effort, not a guarantee. Enable transcript consolidation only
 against a memory backend you trust with session contents.
