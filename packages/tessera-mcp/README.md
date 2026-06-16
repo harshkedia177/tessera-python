@@ -26,6 +26,10 @@ MCP server exposing Tessera memory to AI coding agents (Claude Code, Codex).
 - `TESSERA_CONSOLIDATE_TRANSCRIPT`: set `1` to enable the Claude Code SessionEnd
   transcript upload (default off). See the warning below.
 
+Put `TESSERA_API_KEY` and `TESSERA_REPO` in the MCP client config (the `env` block of the server
+entry, or `claude mcp add --env`), not your shell. The client stores them and passes them to the
+server on every launch, so there is no `export` to re-run each session. See Editor setup below.
+
 ## Tools
 
 | Tool | Purpose |
@@ -38,11 +42,36 @@ MCP server exposing Tessera memory to AI coding agents (Claude Code, Codex).
 
 ## Editor setup
 
-- Claude Code: install the plugin with `/plugin marketplace add harshkedia177/tessera-python` then
-  `/plugin install tessera-memory@tessera`. Bundles the MCP server, session hooks, and the
-  `using-tessera-memory` skill (see `integrations/claude-code/`).
-- Codex: copy the `[mcp_servers.tessera_memory]` block into `~/.codex/config.toml` and drop
-  `AGENTS.md` + `.agents/skills/using-tessera-memory/` into your repo (see `integrations/codex/`).
+The key lives in the config and is passed on every launch (no shell `export`).
+
+**Claude Code:**
+
+```bash
+claude mcp add --env TESSERA_API_KEY=tsk_live_... --env TESSERA_REPO=repo:my-app \
+  --scope user tessera -- uvx --from tessera-mcp tessera-mcp
+```
+
+**Cursor / Claude Desktop:**
+
+```json
+{
+  "mcpServers": {
+    "tessera": {
+      "command": "uvx",
+      "args": ["--from", "tessera-mcp", "tessera-mcp"],
+      "env": { "TESSERA_API_KEY": "tsk_live_...", "TESSERA_REPO": "repo:my-app" }
+    }
+  }
+}
+```
+
+**Codex:** copy the `[mcp_servers.tessera_memory]` block from `integrations/codex/config.toml` into
+`~/.codex/config.toml` (key goes in its `[env]` table).
+
+Want session hooks (auto-recall, transcript consolidation) and the `using-tessera-memory` skill too?
+Install the all-in-one plugin: `/plugin marketplace add harshkedia177/tessera-python` then
+`/plugin install tessera-memory@tessera`. The plugin reads `TESSERA_API_KEY` / `TESSERA_REPO` from
+the environment, so set those in your shell profile if you use it.
 
 ## Privacy: the Claude Code SessionEnd hook ships your transcript
 

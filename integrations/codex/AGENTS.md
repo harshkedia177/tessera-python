@@ -12,5 +12,5 @@ The `using-tessera-memory` skill (`.agents/skills/`) covers exactly when and how
 - Record durable conventions with `memory_note`.
 - Never store secrets. Recall before acting; save after learning.
 
-Required env (set in your shell; Codex forwards them via `env_vars`):
-`TESSERA_API_KEY`, `TESSERA_REPO`.
+Required config: `TESSERA_API_KEY` and `TESSERA_REPO`, set in the
+`[mcp_servers.tessera_memory.env]` table of `~/.codex/config.toml`.

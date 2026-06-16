@@ -74,17 +74,31 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
-## Use with MCP (Claude Code, Codex)
+## Use with MCP (Claude Code, Codex, Cursor)
 
-Give your coding agent memory with the `tessera-mcp` server. You don't install this SDK
-separately. `uvx` fetches the server (and the SDK) on first run. Set `TESSERA_API_KEY` and
-`TESSERA_REPO` in your shell first.
+Give your coding agent memory with the `tessera-mcp` server. `uvx` fetches it (and the SDK) on
+first run, so there's nothing to install. Your key lives in the MCP config, not your shell, so it
+persists across sessions with no `export` to re-run.
 
-**Claude Code.** Install the plugin:
+**Claude Code.** Register it once with your key:
 
+```bash
+claude mcp add --env TESSERA_API_KEY=tsk_live_... --env TESSERA_REPO=repo:my-app \
+  --scope user tessera -- uvx --from tessera-mcp tessera-mcp
 ```
-/plugin marketplace add harshkedia177/tessera-python
-/plugin install tessera-memory@tessera
+
+**Cursor / Claude Desktop.** Add to the MCP config:
+
+```json
+{
+  "mcpServers": {
+    "tessera": {
+      "command": "uvx",
+      "args": ["--from", "tessera-mcp", "tessera-mcp"],
+      "env": { "TESSERA_API_KEY": "tsk_live_...", "TESSERA_REPO": "repo:my-app" }
+    }
+  }
+}
 ```
 
 **Codex.** Add to `~/.codex/config.toml`:
@@ -93,10 +107,13 @@ separately. `uvx` fetches the server (and the SDK) on first run. Set `TESSERA_AP
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]
+
+[mcp_servers.tessera_memory.env]
+TESSERA_API_KEY = "tsk_live_..."
+TESSERA_REPO = "repo:my-app"
 ```
 
-[Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md) has the full setup for Cursor and other clients, plus the privacy notes on transcript consolidation.
+Want auto-recall hooks and the skill too? [Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md) covers the all-in-one Claude Code plugin, Cursor, and the privacy notes on transcript consolidation.
 
 ## Configuration
 

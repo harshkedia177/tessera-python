@@ -1,16 +1,16 @@
 # Add to ~/.codex/config.toml (or a trusted project-scoped .codex/config.toml).
 #
-# Codex does NOT interpolate ${VAR} inside the [mcp_servers.<name>.env] table —
-# that table takes LITERAL values only. To forward secrets/identity already set
-# in your shell, list their NAMES under `env_vars` (Codex reads them from its
-# local environment). Set these in your shell before launching Codex:
-#   export TESSERA_API_KEY=...   TESSERA_REPO=repo:my-app
+# Put your key and repo identity directly in the [env] table below. Codex stores them
+# in the config and passes them to the server on every launch, so there is no shell
+# export to re-run. Replace the placeholder values.
 #
+# Alternative: to forward variables already set in your shell instead of hardcoding
+# them, drop the [env] table and use `env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]`.
 # If Codex can't find `uvx`, use its absolute path (run `which uvx`) for `command`.
-#
-# Requires a Codex version with `env_vars` support (recent CLI). On older versions,
-# set the values literally under [mcp_servers.tessera_memory.env] instead.
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]
+
+[mcp_servers.tessera_memory.env]
+TESSERA_API_KEY = "tsk_live_..."
+TESSERA_REPO = "repo:my-app"
