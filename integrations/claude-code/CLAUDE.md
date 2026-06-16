@@ -8,7 +8,7 @@ This project is wired to Tessera long-term memory via MCP tools
 - Save a lesson after any correction or non-obvious discovery.
 - See the `using-tessera-memory` skill for exactly when and how.
 
-Required env: `TESSERA_API_KEY`, `TESSERA_BASE_URL`, `TESSERA_REPO` (repo identity).
+Required env: `TESSERA_API_KEY`, `TESSERA_REPO` (repo identity).
 
 ## Transcript consolidation is opt-in (privacy)
 

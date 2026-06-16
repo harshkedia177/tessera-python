@@ -4,7 +4,7 @@
 # that table takes LITERAL values only. To forward secrets/identity already set
 # in your shell, list their NAMES under `env_vars` (Codex reads them from its
 # local environment). Set these in your shell before launching Codex:
-#   export TESSERA_API_KEY=...   TESSERA_BASE_URL=...   TESSERA_REPO=repo:my-app
+#   export TESSERA_API_KEY=...   TESSERA_REPO=repo:my-app
 #
 # If Codex can't find `uvx`, use its absolute path (run `which uvx`) for `command`.
 #
@@ -13,4 +13,4 @@
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-env_vars = ["TESSERA_API_KEY", "TESSERA_BASE_URL", "TESSERA_REPO"]
+env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]

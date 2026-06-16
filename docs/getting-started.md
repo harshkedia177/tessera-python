@@ -15,13 +15,12 @@ Requires Python 3.10+.
 
 ## Connect
 
-The client reads `TESSERA_API_KEY` and `TESSERA_BASE_URL` from the environment, or you can pass
-them directly:
+The client reads `TESSERA_API_KEY` from the environment, or you can pass it directly:
 
 ```python
 from tessera_memory import Tessera
 
-client = Tessera()  # or Tessera(api_key="tsk_live_...", base_url="https://api.tessera.example")
+client = Tessera()  # or Tessera(api_key="tsk_live_...")
 ```
 
 Check connectivity:

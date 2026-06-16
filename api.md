@@ -21,7 +21,7 @@ Constructor (both clients, keyword-only):
 | Param | Type | Default | Notes |
 |---|---|---|---|
 | `api_key` | `str \| None` | `None` | Falls back to `TESSERA_API_KEY`. Required; raises `TesseraError` if absent. |
-| `base_url` | `str \| None` | `None` | Falls back to `TESSERA_BASE_URL`, else `http://localhost:8000`. |
+| `base_url` | `str \| None` | `None` | Optional self-hosting override. Defaults to `https://tessera.harshkedia717.workers.dev`; a `TESSERA_BASE_URL` env override is still honored. |
 | `timeout` | `float` | `60.0` | Per-request timeout in seconds. |
 | `max_retries` | `int` | `2` | Up to 3 attempts total. |
 | `default_headers` | `dict[str, str] \| None` | `None` | Sent on every request. |

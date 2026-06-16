@@ -1,7 +1,7 @@
 """Tessera memory service Python SDK.
 
 >>> from tessera_memory import Tessera
->>> client = Tessera()  # reads TESSERA_API_KEY + TESSERA_BASE_URL
+>>> client = Tessera()  # reads TESSERA_API_KEY
 """
 
 from __future__ import annotations

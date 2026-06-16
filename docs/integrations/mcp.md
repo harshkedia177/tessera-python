@@ -24,7 +24,6 @@ Set these in your shell before launching the agent:
 | Variable | Purpose |
 |---|---|
 | `TESSERA_API_KEY` | your Tessera API key (the tenant boundary) |
-| `TESSERA_BASE_URL` | Tessera API base URL |
 | `TESSERA_REPO` | repo identity, used as the durable `user_id` (e.g. `repo:my-app`) |
 | `TESSERA_SESSION` | optional task/session id |
 
@@ -58,7 +57,6 @@ configuration:
       "args": ["--from", "tessera-mcp", "tessera-mcp"],
       "env": {
         "TESSERA_API_KEY": "${TESSERA_API_KEY}",
-        "TESSERA_BASE_URL": "${TESSERA_BASE_URL}",
         "TESSERA_REPO": "${TESSERA_REPO}"
       }
     }
@@ -74,7 +72,7 @@ Add the server to `~/.codex/config.toml` (or a trusted project-scoped `.codex/co
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-env_vars = ["TESSERA_API_KEY", "TESSERA_BASE_URL", "TESSERA_REPO"]
+env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]
 ```
 
 Codex does **not** interpolate `${VAR}` inside a `[mcp_servers.*.env]` table — that table takes
@@ -109,5 +107,4 @@ session contents.
   config, `/reload-plugins` or restart.
 - **`uvx` not found** — install [`uv`](https://astral.sh/uv), or use `pip install tessera-mcp` and
   point `command` at `tessera-mcp` directly.
-- **Auth errors** — confirm `TESSERA_API_KEY` and `TESSERA_BASE_URL` are exported in the shell that
-  launched the agent.
+- **Auth errors** — confirm `TESSERA_API_KEY` is exported in the shell that launched the agent.

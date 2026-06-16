@@ -27,8 +27,8 @@ Requires Python 3.10+.
 ```python
 from tessera_memory import Tessera
 
-# Reads TESSERA_API_KEY and TESSERA_BASE_URL from the environment,
-# or pass them: Tessera(api_key="tsk_live_...", base_url="https://...").
+# Reads TESSERA_API_KEY from the environment,
+# or pass it: Tessera(api_key="tsk_live_...").
 client = Tessera()
 
 # Write a memory.
@@ -66,10 +66,9 @@ asyncio.run(main())
 
 ## Configuration
 
-| Setting  | Argument             | Environment variable | Default                 |
-| -------- | -------------------- | -------------------- | ----------------------- |
-| API key  | `Tessera(api_key=)`  | `TESSERA_API_KEY`    | required                |
-| Base URL | `Tessera(base_url=)` | `TESSERA_BASE_URL`   | `http://localhost:8000` |
+| Setting | Argument            | Environment variable | Default  |
+| ------- | ------------------- | -------------------- | -------- |
+| API key | `Tessera(api_key=)` | `TESSERA_API_KEY`    | required |
 
 Auth is sent as `Authorization: Bearer <key>`. Full options — timeouts, custom transport, logging,
 raw responses — are in [Configuration](./docs/configuration.md).
@@ -132,8 +131,8 @@ header, the API key, and request bodies are never logged.
 ## Use with MCP (Claude Code, Codex)
 
 Expose memory to a coding agent with the `tessera-mcp` server. You don't install this SDK
-separately — `uvx` fetches the server (and the SDK with it) on first run. Set `TESSERA_API_KEY`,
-`TESSERA_BASE_URL`, and `TESSERA_REPO` in your shell first.
+separately — `uvx` fetches the server (and the SDK with it) on first run. Set `TESSERA_API_KEY`
+and `TESSERA_REPO` in your shell first.
 
 **Claude Code** — install the plugin:
 
@@ -148,7 +147,7 @@ separately — `uvx` fetches the server (and the SDK with it) on first run. Set 
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-env_vars = ["TESSERA_API_KEY", "TESSERA_BASE_URL", "TESSERA_REPO"]
+env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]
 ```
 
 Full setup for Claude Code, Codex, Cursor, and other MCP clients — plus the privacy notes on

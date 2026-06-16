@@ -8,7 +8,6 @@ logging, transport) that applies to every request.
 | Variable | Used for |
 |---|---|
 | `TESSERA_API_KEY` | API key, sent as `Authorization: Bearer <key>`. Required. |
-| `TESSERA_BASE_URL` | API base URL. Defaults to `http://localhost:8000`. |
 | `TESSERA_LOG` | Set to `debug`/`info`/… to log request/response lines to stderr. |
 
 Explicit constructor arguments take precedence over the environment.
@@ -20,7 +19,6 @@ from tessera_memory import Tessera
 
 client = Tessera(
     api_key="tsk_live_...",     # else TESSERA_API_KEY
-    base_url="https://...",     # else TESSERA_BASE_URL, else http://localhost:8000
     timeout=60.0,               # seconds, per request
     max_retries=2,              # up to 3 attempts total
     default_headers={"X-Team": "growth"},
@@ -28,6 +26,10 @@ client = Tessera(
 ```
 
 `AsyncTessera` takes the same arguments (with an `httpx.AsyncClient` for `http_client`).
+
+`base_url` defaults to the hosted Tessera service (`https://tessera.harshkedia717.workers.dev`).
+For self-hosting or testing, override it with `Tessera(base_url="https://...")` or the
+`TESSERA_BASE_URL` env var.
 
 ## Per-request overrides
 

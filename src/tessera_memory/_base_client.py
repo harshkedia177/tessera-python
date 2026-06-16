@@ -23,7 +23,7 @@ from .models import ProblemDetail
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
-DEFAULT_BASE_URL = "http://localhost:8000"
+DEFAULT_BASE_URL = "https://tessera.harshkedia717.workers.dev"
 DEFAULT_TIMEOUT = 60.0
 DEFAULT_MAX_RETRIES = 2
 

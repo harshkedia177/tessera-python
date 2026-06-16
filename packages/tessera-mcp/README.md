@@ -20,7 +20,6 @@ MCP server exposing Tessera memory to AI coding agents (Claude Code, Codex).
 ## Configure (env)
 
 - `TESSERA_API_KEY` — your Tessera API key (the tenant/isolation boundary)
-- `TESSERA_BASE_URL` — Tessera API base URL
 - `TESSERA_REPO` — repo identity, used as the durable `user_id` (e.g. `repo:my-app`)
 - `TESSERA_SESSION` — optional task/session id
 - `TESSERA_RECALL_ON_PROMPT` — set `0` to disable per-prompt lesson recall (Claude Code)

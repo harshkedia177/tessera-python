@@ -5,7 +5,6 @@
       "args": ["--from", "tessera-mcp", "tessera-mcp"],
       "env": {
         "TESSERA_API_KEY": "${TESSERA_API_KEY}",
-        "TESSERA_BASE_URL": "${TESSERA_BASE_URL}",
         "TESSERA_REPO": "${TESSERA_REPO}"
       }
     }

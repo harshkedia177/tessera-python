@@ -13,4 +13,4 @@ The `using-tessera-memory` skill (`.agents/skills/`) covers exactly when and how
 - Never store secrets. Recall before acting; save after learning.
 
 Required env (set in your shell; Codex forwards them via `env_vars`):
-`TESSERA_API_KEY`, `TESSERA_BASE_URL`, `TESSERA_REPO`.
+`TESSERA_API_KEY`, `TESSERA_REPO`.

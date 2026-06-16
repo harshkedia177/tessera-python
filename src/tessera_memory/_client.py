@@ -30,7 +30,7 @@ _NOT_GIVEN: Any = object()
 class Tessera(SyncTransport):
     """Synchronous Tessera client.
 
-    >>> client = Tessera()  # reads TESSERA_API_KEY + TESSERA_BASE_URL
+    >>> client = Tessera()  # reads TESSERA_API_KEY
     >>> client.memories.add(content="...", role="user", user_id="u1")
     >>> client.search(query="...", top_k=5)
     >>> client.query(query="...", mode="chat")
