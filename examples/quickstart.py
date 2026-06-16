@@ -1,6 +1,6 @@
 """Minimal end-to-end example for the Tessera Python SDK.
 
-    TESSERA_API_KEY=tsk_live_... python examples/quickstart.py
+TESSERA_API_KEY=tsk_live_... python examples/quickstart.py
 """
 
 from __future__ import annotations
