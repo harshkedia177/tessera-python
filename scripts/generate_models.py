@@ -32,7 +32,9 @@ FLAGS = [
     "--field-constraints",
     "--snake-case-field",
     "--use-schema-description",
-    # Pin formatters for deterministic output across generator versions.
+    # Deterministic output: drop the generation timestamp (else the file changes on every
+    # run and the model-drift check never passes) and pin formatters across versions.
+    "--disable-timestamp",
     "--formatters",
     "black",
     "isort",
