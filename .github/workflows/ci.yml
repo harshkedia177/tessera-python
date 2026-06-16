@@ -149,8 +149,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/pkg-memory/
+          skip-existing: true
 
       - name: Publish tessera-mcp to PyPI (trusted publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/pkg-mcp/
+          skip-existing: true
