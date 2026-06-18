@@ -77,43 +77,55 @@ asyncio.run(main())
 ## Use with MCP (Claude Code, Codex, Cursor)
 
 Give your coding agent memory with the `tessera-mcp` server. `uvx` fetches it (and the SDK) on
-first run, so there's nothing to install. Your key lives in the MCP config, not your shell, so it
-persists across sessions with no `export` to re-run.
+first run, so there's nothing to install. Two things are handled for you:
 
-**Claude Code.** Register it once with your key:
+- **Repo isolation is automatic.** Memory is namespaced per git repo (from the `origin`
+  remote, falling back to the folder name). You never declare a repo name.
+- **Your key is stored once, in a file.** Run `tessera-mcp login` and the key is saved to
+  `~/.tessera/credentials.json` — no shell `export`, no `${VAR}` in config, no restart.
 
-```bash
-claude mcp add --env TESSERA_API_KEY=tsk_live_... --env TESSERA_REPO=repo:my-app \
-  --scope user tessera -- uvx --from tessera-mcp tessera-mcp
+**Claude Code (one-step plugin).** Install the plugin, then save your key once:
+
+```text
+/plugin marketplace add harshkedia177/tessera-python
+/plugin install tessera-memory@tessera
 ```
 
-**Cursor / Claude Desktop.** Add to the MCP config:
+```bash
+uvx --from tessera-mcp tessera-mcp login   # paste your tsk_live_... key when prompted
+```
+
+That's it — you get the five `memory_*` tools, auto-recall hooks, and the skill. (If you
+skip the login step, the first memory call simply tells the agent to ask you for the key
+and run it for you.)
+
+**Cursor / Claude Desktop.** Add the server (no `env` block needed), then run the same
+`tessera-mcp login` once:
 
 ```json
 {
   "mcpServers": {
     "tessera": {
       "command": "uvx",
-      "args": ["--from", "tessera-mcp", "tessera-mcp"],
-      "env": { "TESSERA_API_KEY": "tsk_live_...", "TESSERA_REPO": "repo:my-app" }
+      "args": ["--from", "tessera-mcp", "tessera-mcp"]
     }
   }
 }
 ```
 
-**Codex.** Add to `~/.codex/config.toml`:
+**Codex.** Add to `~/.codex/config.toml`, then run `tessera-mcp login` once:
 
 ```toml
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-
-[mcp_servers.tessera_memory.env]
-TESSERA_API_KEY = "tsk_live_..."
-TESSERA_REPO = "repo:my-app"
 ```
 
-Want auto-recall hooks and the skill too? [Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md) covers the all-in-one Claude Code plugin, Cursor, and the privacy notes on transcript consolidation.
+> Prefer the environment? `TESSERA_API_KEY` (key) and `TESSERA_REPO` (to override the
+> auto-detected namespace) still work everywhere and take precedence over the stored values.
+
+Full details — the all-in-one Claude Code plugin, hooks, and the privacy notes on transcript
+consolidation — are in [Use with MCP](https://github.com/harshkedia177/tessera-python/blob/main/docs/integrations/mcp.md).
 
 ## Configuration
 

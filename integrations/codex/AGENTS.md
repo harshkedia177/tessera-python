@@ -12,5 +12,9 @@ The `using-tessera-memory` skill (`.agents/skills/`) covers exactly when and how
 - Record durable conventions with `memory_note`.
 - Never store secrets. Recall before acting; save after learning.
 
-Required config: `TESSERA_API_KEY` and `TESSERA_REPO`, set in the
-`[mcp_servers.tessera_memory.env]` table of `~/.codex/config.toml`.
+## Setup
+Memory is namespaced per git repo automatically — there is no repo name to set. The only
+thing to provide is the API key. If a memory tool reports that no key is configured, ask the
+user for their Tessera API key (`tsk_live_...`) and run
+`uvx --from tessera-mcp tessera-mcp login <key>` — it persists in `~/.tessera/credentials.json`
+and every repo reuses it.

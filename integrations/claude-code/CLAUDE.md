@@ -8,7 +8,10 @@ This project is wired to Tessera long-term memory via MCP tools
 - Save a lesson after any correction or non-obvious discovery.
 - See the `using-tessera-memory` skill for exactly when and how.
 
-Required env: `TESSERA_API_KEY`, `TESSERA_REPO` (repo identity).
+Setup is one step: the memory is namespaced per git repo automatically (no repo name to
+declare), and the only thing to provide is the API key. If a memory tool replies that no
+key is configured, ask the user for their Tessera API key and run
+`uvx --from tessera-mcp tessera-mcp login <key>` — it persists and every repo picks it up.
 
 ## Transcript consolidation is opt-in (privacy)
 

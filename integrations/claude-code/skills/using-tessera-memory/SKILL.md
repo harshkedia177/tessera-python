@@ -5,7 +5,15 @@ description: Use when starting a coding task, when corrected by the user, or whe
 
 # Using Tessera Memory
 
-Tessera is this repo's long-term memory. Use the MCP tools deliberately.
+Tessera is this repo's long-term memory. Use the MCP tools deliberately. Memory is
+isolated per git repo automatically — there is no repo name to set.
+
+## First-run setup (only if a tool reports no key)
+If a memory tool replies that no API key is configured, do this once:
+1. Ask the user for their Tessera API key (it starts with `tsk_live_`).
+2. Run `uvx --from tessera-mcp tessera-mcp login <key>` for them.
+3. Retry the memory call — it works immediately, no restart needed.
+The key is saved to `~/.tessera/credentials.json` and every repo reuses it.
 
 ## At the start of a task
 1. Call `memory_recall` with a short description of the task to load conventions, prior decisions, and recent work.

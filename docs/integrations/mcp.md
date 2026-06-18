@@ -15,66 +15,62 @@ coding agents memory. It runs the SDK for you, so you do not install `tessera-me
 | `memory_recall_lessons(situation)` | recall lessons for a situation |
 | `memory_note(text)` | record a durable repo convention |
 
-You need two values: `TESSERA_API_KEY` (your key) and `TESSERA_REPO` (the repo identity used as the
-durable `user_id`, e.g. `repo:my-app`).
+## Two things you don't have to configure
 
-## Claude Code
+**Repo isolation is automatic.** The server derives the memory namespace (the Tessera `user_id`)
+from where it runs: the git `origin` remote as `owner/repo`, falling back to the git toplevel
+folder name, then the working-directory name. Every repo gets its own memory; you never declare a
+repo name. Set `TESSERA_REPO` only if you want to override the detected value.
 
-Two ways to set it up. Pick one.
+**Your key lives in a file, not your shell.** Run `tessera-mcp login` once and the key is written to
+`~/.tessera/credentials.json`. The server and the hooks both read it from there, so there is no
+shell `export`, no `${VAR}` placeholder in any config, and no terminal restart. `TESSERA_API_KEY` in
+the environment still works and takes precedence.
 
-### Option A: the MCP server only (simplest, no shell setup)
+```bash
+uvx --from tessera-mcp tessera-mcp login          # prompts for the key (hidden input)
+uvx --from tessera-mcp tessera-mcp login tsk_live_...   # or pass it inline
+uvx --from tessera-mcp tessera-mcp status         # show the detected repo + whether a key is set
+```
 
-The key is stored in Claude Code's own config and passed to the server on every launch. Nothing to
-export.
+## Claude Code (the plugin)
+
+The plugin installs the five tools, the auto-recall hooks (session start + per prompt), and the
+skill that tells the agent when to use them.
 
 1. Install [`uv`](https://astral.sh/uv) if you don't have it.
-2. Register the server with your key (one command):
-   ```bash
-   claude mcp add --env TESSERA_API_KEY=tsk_live_... --env TESSERA_REPO=repo:my-app \
-     --scope user tessera -- uvx --from tessera-mcp tessera-mcp
-   ```
-   `--scope user` makes it available in every project. The `--` separates Claude's flags from the
-   server command.
-3. Verify: `claude mcp list` (or `/mcp` inside a session) shows `tessera`.
-
-You get the five `memory_*` tools. This path has no session hooks or skill.
-
-### Option B: the plugin (tools + auto-recall hooks + skill)
-
-The plugin also installs hooks that recall memory at session start and per prompt, and a skill that
-tells the agent when to use the tools. The hooks run as separate scripts that read the key from your
-**environment**, so this path needs the key in your shell profile (set once, persists).
-
-1. Install [`uv`](https://astral.sh/uv).
-2. Add your credentials to your shell profile once, then restart your terminal:
-   ```bash
-   echo 'export TESSERA_API_KEY=tsk_live_...' >> ~/.zshrc
-   echo 'export TESSERA_REPO=repo:my-app'      >> ~/.zshrc
-   ```
-3. Install the plugin:
-   ```
+2. Install the plugin:
+   ```text
    /plugin marketplace add harshkedia177/tessera-python
    /plugin install tessera-memory@tessera
    ```
+3. Save your key once:
+   ```bash
+   uvx --from tessera-mcp tessera-mcp login
+   ```
 4. Run `/reload-plugins` (or restart Claude Code), then `/mcp` to confirm `tessera_memory` appears.
 
-After this the tools work and the hooks recall and save automatically.
+That's the whole setup — no shell profile edits, no repo name. If you install the plugin but skip
+step 3, nothing breaks: the first memory call returns a message telling the agent to ask you for the
+key and run `tessera-mcp login` for you, and the next call works immediately (no restart).
+
+> Want the server only, without hooks or the skill? Register it directly:
+> ```bash
+> claude mcp add --scope user tessera -- uvx --from tessera-mcp tessera-mcp
+> ```
+> then run `tessera-mcp login` once.
 
 ## Cursor / Claude Desktop
 
-Add the server to the client's MCP config. The key goes in the `env` block (stored and passed on
-every launch):
+Add the server to the client's MCP config — no `env` block needed — then run `tessera-mcp login`
+once:
 
 ```json
 {
   "mcpServers": {
     "tessera": {
       "command": "uvx",
-      "args": ["--from", "tessera-mcp", "tessera-mcp"],
-      "env": {
-        "TESSERA_API_KEY": "tsk_live_...",
-        "TESSERA_REPO": "repo:my-app"
-      }
+      "args": ["--from", "tessera-mcp", "tessera-mcp"]
     }
   }
 }
@@ -82,23 +78,26 @@ every launch):
 
 ## Codex
 
-Add the server to `~/.codex/config.toml` (or a trusted project-scoped `.codex/config.toml`). The key
-goes in the `[env]` table, so Codex passes it on every launch:
+Add the server to `~/.codex/config.toml` (or a trusted project-scoped `.codex/config.toml`), then
+run `tessera-mcp login` once:
 
 ```toml
 [mcp_servers.tessera_memory]
 command = "uvx"
 args = ["--from", "tessera-mcp", "tessera-mcp"]
-
-[mcp_servers.tessera_memory.env]
-TESSERA_API_KEY = "tsk_live_..."
-TESSERA_REPO = "repo:my-app"
 ```
 
-To forward variables already set in your shell instead of hardcoding them, drop the `[env]` table and
-use `env_vars = ["TESSERA_API_KEY", "TESSERA_REPO"]`. For behavioral guidance, drop `AGENTS.md` and
-`.agents/skills/using-tessera-memory/` from [`integrations/codex/`](../../integrations/codex/) into
-your repo.
+The key comes from `~/.tessera/credentials.json` and the repo is auto-detected, so no `[env]` table
+is required. To pin the key or namespace explicitly instead, add one:
+
+```toml
+[mcp_servers.tessera_memory.env]
+TESSERA_API_KEY = "tsk_live_..."
+TESSERA_REPO = "repo:my-app"   # only to override the auto-detected repo
+```
+
+For behavioral guidance, drop `AGENTS.md` and `.agents/skills/using-tessera-memory/` from
+[`integrations/codex/`](../../integrations/codex/) into your repo.
 
 ## Running the server directly
 
@@ -112,6 +111,9 @@ npx tessera-mcp                        # Node wrapper (bootstraps via uvx)
 
 | Variable | Purpose |
 |---|---|
+| `TESSERA_API_KEY` | API key; overrides the stored credentials file |
+| `TESSERA_REPO` | override the auto-detected repo namespace |
+| `TESSERA_CONFIG_DIR` | directory for the credentials file (default `~/.tessera`) |
 | `TESSERA_SESSION` | optional task/session id |
 | `TESSERA_RECALL_ON_PROMPT` | set `0` to disable per-prompt lesson recall (plugin hooks) |
 | `TESSERA_CONSOLIDATE_TRANSCRIPT` | set `1` to enable the SessionEnd transcript upload (off by default) |
@@ -131,5 +133,7 @@ session contents.
   config, run `/reload-plugins` or restart.
 - **`uvx` not found:** install [`uv`](https://astral.sh/uv), or `pip install tessera-mcp` and point
   `command` at `tessera-mcp` directly.
-- **Auth errors:** confirm the key is in the server's config `env` (Options A / Cursor / Codex) or in
-  your shell profile (Option B plugin).
+- **Auth errors / "no API key configured":** run `tessera-mcp login` (or set `TESSERA_API_KEY`), then
+  `tessera-mcp status` to confirm. The stored key lives in `~/.tessera/credentials.json`.
+- **Memory landed under the wrong namespace:** run `tessera-mcp status` to see the detected repo. Set
+  `TESSERA_REPO` to override it if needed.

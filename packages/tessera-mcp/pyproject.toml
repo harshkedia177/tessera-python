@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-tessera-mcp = "tessera_mcp.server:main"
+tessera-mcp = "tessera_mcp.cli:main"
 
 [tool.hatch.version]
 # Single source of truth: __version__ in _version.py (no second hardcoded string to drift).

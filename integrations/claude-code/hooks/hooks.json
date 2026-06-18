@@ -1,13 +1,13 @@
 {
   "hooks": {
     "SessionStart": [
-      { "hooks": [ { "type": "command", "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/session_start.py" } ] }
+      { "hooks": [ { "type": "command", "command": "uvx --from tessera-mcp tessera-mcp hook session-start" } ] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [ { "type": "command", "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/user_prompt_submit.py" } ] }
+      { "hooks": [ { "type": "command", "command": "uvx --from tessera-mcp tessera-mcp hook user-prompt-submit" } ] }
     ],
     "SessionEnd": [
-      { "hooks": [ { "type": "command", "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/session_end.py" } ] }
+      { "hooks": [ { "type": "command", "command": "uvx --from tessera-mcp tessera-mcp hook session-end" } ] }
     ]
   }
 }
