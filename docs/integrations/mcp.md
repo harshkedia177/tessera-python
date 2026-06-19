@@ -2,8 +2,27 @@
 
 `tessera-mcp` is a [Model Context Protocol](https://modelcontextprotocol.io/) server that gives
 coding agents memory. It runs the SDK for you, so you do not install `tessera-memory` separately.
-`uvx` fetches the server (and the SDK) on first run. The only prerequisite is
-[`uv`](https://astral.sh/uv) on your PATH.
+`uvx` fetches the server (and the SDK) on first run.
+
+## Prerequisite: just `uv` (nothing in your repo)
+
+Your project needs **no Python, no pip, and no virtualenv**. The server and the hooks run via
+`uvx` in an isolated, cached environment that is completely separate from your repo — so it works
+the same in a Node, Go, or empty repo, and never touches (or depends on) a project `.venv`.
+
+The only thing the machine needs is [`uv`](https://astral.sh/uv), a single self-contained binary
+that even downloads its own Python if none is present:
+
+```bash
+# macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+# or: brew install uv
+```
+
+(If you'd rather not use uv: `pip install tessera-mcp` works wherever you have pip, and
+`npx tessera-mcp` works with Node — though that wrapper bootstraps uv anyway.)
 
 ## What the agent gets
 

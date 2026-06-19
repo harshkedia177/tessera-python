@@ -77,7 +77,9 @@ asyncio.run(main())
 ## Use with MCP (Claude Code, Codex, Cursor)
 
 Give your coding agent memory with the `tessera-mcp` server. `uvx` fetches it (and the SDK) on
-first run, so there's nothing to install. Two things are handled for you:
+first run — your repo needs **no Python, pip, or virtualenv**; it all runs in an isolated uvx
+environment. The only machine-wide prerequisite is [`uv`](https://astral.sh/uv) (a single binary
+that downloads its own Python if needed). Two more things are handled for you:
 
 - **Repo isolation is automatic.** Memory is namespaced per git repo (from the `origin`
   remote, falling back to the folder name). You never declare a repo name.
